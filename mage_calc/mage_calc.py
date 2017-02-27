@@ -1,14 +1,17 @@
 import operator  # Used to sort by an element of a class
-from enum import Enum  # Used to make algorithma bit more readable
 import collections  # Used to get a dictionary with .append()
 import numpy  # Used to calculate standard deviation
-
-
-class PointType(Enum):
-    Nothing = -1
-    Peak = 0
-    Valley = 1
-
+try:
+    from enum import Enum  # Used to make algorithma bit more readable
+    class PointType(Enum):
+        Nothing = -1
+        Peak = 0
+        Valley = 1
+except ImportError:
+    class PointType(object):
+        self.Nothing = -1
+        self.Peak = 0
+        self.Valley = 1
 
 class MageDataPoint(object):
     '''
@@ -22,7 +25,7 @@ class MageDataPoint(object):
     '''
 
     def __init__(self, newTime=-1, newGlucose=-1):
-        if(newTime == -1 or newGlucose == -1):
+        if newTime == -1 or newGlucose == -1:
             raise RuntimeError
         self.t = newTime
         self.g = newGlucose
@@ -99,7 +102,7 @@ class MageDataSet(object):
         self.MAGE = -1
         self.NUM_MAGE_PTS = 1
         self.printPoints = False
-        if(newTimes is None or newGlucoses is None):
+        if newTimes is None or newGlucoses is None:
             self.points = list()
         else:
             '''
@@ -111,7 +114,7 @@ class MageDataSet(object):
                                 len(newGlucoses)))]
 
     def __str__(self):
-        if(self.printPoints):
+        if self.printPoints:
             for point in self.points:
                 print(point)
         return "MAGE score: {}".format(self.getMAGE())
@@ -143,7 +146,7 @@ class MageDataSet(object):
             daily_offset = len(dailyData)
 
     def current(self):
-        if(self.pointIndex >= 0):
+        if self.pointIndex >= 0:
             return self.points[self.pointIndex]
         else:
             return self.points[0]
@@ -154,7 +157,7 @@ class MageDataSet(object):
         Makes sense, since MAGE is a peak finding
         algorithm at its core.
         '''
-        if(len(self.points) < 3):
+        if len(self.points) < 3:
             return
         self.pointIndex = 1
         found = False
@@ -164,13 +167,13 @@ class MageDataSet(object):
             Forgive me, this next bit is O(n^2)
             '''
             for point in self.points[:self.pointIndex]:
-                if(self.current() >= point.plusSigma()):
+                if self.current() >= point.plusSigma():
                     found = True
                     self.lastFound = PointType.Peak
                     self.currentPeak = self.current()
                     self.currentValley = point
                     break  #return#break
-                elif(self.current() <= point.minusSigma()):
+                elif self.current() <= point.minusSigma():
                     found = True
                     self.lastFound = PointType.Valley
                     self.currentPeak = point
@@ -180,74 +183,74 @@ class MageDataSet(object):
 
     def findOtherPeaksAndValleys(self):
         '''
-        Again, we constrain the number
+        again, we constrain the number
         of points since it doesn't make
         sense to move on if the algorithm
         doesn't have enough data.
         '''
-        if(len(self.points) < 3):
+        if len(self.points) < 3:
             return
-        self.MAGE = 0
-        self.NUM_MAGE_PTS = 0
+        self.mage = 0
+        self.num_mage_pts = 0
         for point in self.points[self.pointIndex:]:
             '''
             print("pp: {}, vv: {}, cc: {}".format\
-            (self.currentPeak, self.currentValley, point))
+            (self.currentpeak, self.currentvalley, point))
             '''
-            if(self.lastFound == PointType.Valley):
-                if(point >= self.currentValley.plusSigma()):
+            if self.lastFound == PointType.valley:
+                if point >= self.currentvalley.plussigma():
                     '''
-                    We found a peak! Now safe the add the previous two
-                    to our running MAGE sum
+                    we found a peak! now safe the add the previous two
+                    to our running mage sum
                     '''
                     #print("found peak!\t", point)
-                    self.lastFound = PointType.Peak
-                    self.MAGE += abs(self.currentPeak - self.currentValley)
-                    self.NUM_MAGE_PTS += 1
-                    self.currentPeak = point
+                    self.lastFound = PointType.peak
+                    self.mage += abs(self.currentpeak - self.currentvalley)
+                    self.num_mage_pts += 1
+                    self.currentpeak = point
                 else:
-                # Check for smaller valley
-                    #print("checking for smaller valley,\t", self.currentValley)
-                    self.currentValley = point if point < self.currentValley else self.currentValley
-                    #print("maybe new valley?\t\t\t", self.currentValley)
-            elif(self.lastFound == PointType.Peak):
-                if(point <= self.currentPeak.minusSigma()):
+                # check for smaller valley
+                    #print("checking for smaller valley,\t", self.currentvalley)
+                    self.currentvalley = point if point < self.currentvalley else self.currentvalley
+                    #print("maybe new valley?\t\t\t", self.currentvalley)
+            elif self.lastFound == PointType.peak:
+                if point <= self.currentPeak.minusSigma():
                     '''
-                    We found a valley! Now safe to add the previous two
-                    to our running MAGE sum
+                    we found a valley! now safe to add the previous two
+                    to our running mage sum
                     '''
                     #print("found valley!\t", point)
-                    self.lastFound = PointType.Valley
-                    self.MAGE += abs(self.currentPeak - self.currentValley)
-                    self.NUM_MAGE_PTS += 1
-                    self.currentValley = point
+                    self.lastFound = PointType.valley
+                    self.mage += abs(self.currentpeak - self.currentvalley)
+                    self.num_mage_pts += 1
+                    self.currentvalley = point
                 else:
-                    #print("checking for larger peak,\t", self.currentPeak)
-                    self.currentPeak = point if point > self.currentPeak else self.currentPeak
-                    #print("maybe new peak?\t\t\t", self.currentPeak)
+                    #print("checking for larger peak,\t", self.currentpeak)
+                    self.currentpeak = point if point > self.currentpeak else self.currentpeak
+                    #print("maybe new peak?\t\t\t", self.currentpeak)
             else:
-                print("Uhoh, something's gone terribly wrong!")
-                print("Somehow we're filtering when lastFound is Nothing!")
-                raise RuntimeException
-        top = self.currentPeak
-        bottom = self.currentValley
-        if self.lastFound == PointType.Peak:
+                print("uhoh, something's gone terribly wrong!")
+                print("somehow we're filtering when lastFound is nothing!")
+                raise runtimeexception
+        top = self.currentpeak
+        bottom = self.currentvalley
+        if self.lastFound == PointType.peak:
             #print("last found was a peak")
-            if(point <= self.currentPeak.minusSigma()):
+            if point <= self.currentpeak.minussigma():
                 top = point
             else:
-                top = self.currentValley
-            bottom = self.currentPeak
-        elif self.lastFound == PointType.Valley:
+                top = self.currentvalley
+            bottom = self.currentpeak
+        elif self.lastFound == PointType.valley:
             #print("last found was a valley")
-            if(point >= self.currentValley.plusSigma()):
+            if point >= self.currentvalley.plussigma():
                 top = point
             else:
-                top = self.currentPeak
-            bottom = self.currentValley
-        self.MAGE += abs(top - bottom)
-        self.NUM_MAGE_PTS += 1
-            # self.pointIndex += 1 # Do this so we can use .current() properly
+                top = self.currentpeak
+            bottom = self.currentvalley
+        self.mage += abs(top - bottom)
+        self.num_mage_pts += 1
+            # self.pointIndex += 1 # do this so we can use .current() properly
 
     def getMAGE(self):
         if self.MAGE < 0:
